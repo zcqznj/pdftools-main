@@ -1,9 +1,9 @@
-name: Build Windows & Mac
+name: Build Mac & Windows
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # 支持手动触发
 
 jobs:
   build:
@@ -12,18 +12,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: ["3.11"]
+        python-version: ["3.10"]
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -31,17 +31,18 @@ jobs:
       - name: Build Windows exe
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --onefile --windowed --name MyApp pdftools.py
+          pyinstaller --onefile --windowed --name MyWinApp pdftools.py
+        # 有图标就加：--icon=app.ico
 
       - name: Build Mac app
         if: matrix.os == 'macos-latest'
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
-#          pyinstaller --onefile --windowed --name MyApp pdftools.py
-          pyinstaller --windowed --name MyApp pdftools.py
+          python3 -m PyInstaller --windowed --name MyMacApp pdftools.py
+        # 有图标就加：--icon=app.icns
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-dist
+          name: ${{ matrix.os }}-output
           path: dist/
