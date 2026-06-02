@@ -11,12 +11,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
-        python-version: ["3.10"]
+        os: [ windows-latest, macos-latest ]
+        python-version: [ "3.10" ]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # 关键：统一切回源码目录，区分Gitee/GitHub环境变量
+      - name: Fix workspace path
+        run: |
+          # Linux/Mac
+          if [ -n "$GITEE_WORKSPACE" ]; then cd "$GITEE_WORKSPACE"; fi
+          if [ -n "$GITHUB_WORKSPACE" ]; then cd "$GITHUB_WORKSPACE"; fi
+        shell: bash
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -25,21 +33,28 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # 每次执行前强制切源码根目录
+          if [ -n "$GITEE_WORKSPACE" ]; then cd "$GITEE_WORKSPACE"; fi
+          if [ -n "$GITHUB_WORKSPACE" ]; then cd "$GITHUB_WORKSPACE"; fi
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Build Windows exe
         if: matrix.os == 'windows-latest'
         run: |
+          # Windows环境
+          if ($env:GITEE_WORKSPACE) { Set-Location $env:GITEE_WORKSPACE }
+          if ($env:GITHUB_WORKSPACE) { Set-Location $env:GITHUB_WORKSPACE }
           pyinstaller --onefile --windowed --name MyWinApp pdftools.py
-        # 有图标就加：--icon=app.ico
+        shell: pwsh
 
       - name: Build Mac app
         if: matrix.os == 'macos-latest'
         run: |
+          if [ -n "$GITEE_WORKSPACE" ]; then cd "$GITEE_WORKSPACE"; fi
+          if [ -n "$GITHUB_WORKSPACE" ]; then cd "$GITHUB_WORKSPACE"; fi
           export MACOSX_DEPLOYMENT_TARGET=10.15
           python3 -m PyInstaller --windowed --name MyMacApp pdftools.py
-        # 有图标就加：--icon=app.icns
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
