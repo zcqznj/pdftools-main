@@ -14,57 +14,64 @@ jobs:
         os: [ windows-latest, macos-latest ]
         python-version: [ "3.10" ]
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
 
-      - name: Install dependencies & UPX压缩工具
-        run: |
-          python -m pip install --upgrade pip
-          pip uninstall -y PySide6 || true
-          pip install PySide6-Essentials nuitka zstandard
-          pip install -r requirements.txt
-          pip uninstall -y test pytest setuptools_scm || true
-          # 安装upx，二次压缩程序
-          if [[ $RUNNER_OS == Windows ]]; then choco install upx; else brew install upx; fi
+    - name: Install Python依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip uninstall -y PySide6 || true
+        pip install PySide6-Essentials nuitka zstandard
+        pip install -r requirements.txt
+        pip uninstall -y test pytest setuptools_scm || true
 
-      - name: Nuitka打包
-        run: |
-          if [[ $RUNNER_OS == Windows ]]; then
-            python -m nuitka pdftools.py ^
-            --standalone ^
-            --enable-plugin=pyside6,upx ^
-            --disable-console ^
-            --windows-icon-from-ico=app.ico ^
-            --output-dir=dist ^
-            --noinclude=unittest ^
-            --noinclude=tkinter ^
-            --noinclude=distutils ^
-            --lto=yes ^
-            --python-flag=-O
-          else
-            export MACOSX_DEPLOYMENT_TARGET=10.15
-            python3 -m nuitka pdftools.py \
-            --standalone \
-            --enable-plugin=pyside6,upx \
-            --disable-console \
-            --macos-icon-from-icns=app.icns \
-            --macos-create-app-bundle \
-            --output-dir=dist \
-            --noinclude=unittest \
-            --noinclude=tkinter \
-            --lto=yes \
-            --python-flag=-O
-          fi
+    - name: 安装UPX压缩
+      if: matrix.os == 'macos-latest'
+      run: brew install upx
+    - name: 安装UPX压缩
+      if: matrix.os == 'windows-latest'
+      run: choco install upx
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-output
-          path: dist/
+    - name: Windows Nuitka打包
+      if: matrix.os == 'windows-latest'
+      run: |
+        python -m nuitka pdftools.py ^
+        --standalone ^
+        --enable-plugin=pyside6,upx ^
+        --disable-console ^
+        --windows-icon-from-ico=app.ico ^
+        --output-dir=dist ^
+        --noinclude=unittest ^
+        --noinclude=tkinter ^
+        --noinclude=distutils ^
+        --lto=yes ^
+        --python-flag=-O
+
+    - name: Mac Nuitka打包
+      if: matrix.os == 'macos-latest'
+      run: |
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+        python3 -m nuitka pdftools.py \
+        --standalone \
+        --enable-plugin=pyside6,upx \
+        --disable-console \
+        --macos-app-icon=app.icns \
+        --macos-create-app-bundle \
+        --output-dir=dist \
+        --noinclude=unittest \
+        --noinclude=tkinter \
+        --lto=yes \
+        --python-flag=-O
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-output
+        path: dist/
