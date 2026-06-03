@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 from ui_mainwinmergepdf import Ui_MainWindow
 from pdf2docx import Converter
 import fitz
-import re  # 新增导入正则
+import re
 
 
 if not sys.warnoptions:
@@ -21,14 +21,14 @@ class MainDialog(QDialog):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-    # 自然排序key函数【新增】实现1,2,9,10,11升序
-    def natural_sort_key(self, s):
-        def to_int(text):
-            return int(text) if text.isdigit() else text
-        return [to_int(x) for x in re.split(r'(\d+)', os.path.basename(s))]
+    # 自然排序：字母按abcd顺序、数字按数值大小 1<2<9<10
+    def natural_key(self, filepath):
+        filename = os.path.basename(filepath)
+        def fn(s):
+            return int(s) if s.isdigit() else s.lower()
+        return [fn(part) for part in re.split(r'(\d+)', filename)]
 
     # 利用PyPDF2模块合并同一文件夹下的所有PDF文件
-    # 只需修改存放PDF文件的文件夹变量：file_dir 和 输出文件名变量: outfile
     def getpdfpath(self):
         dirpath = self.ui.outputpath.text()
         return dirpath
@@ -37,16 +37,15 @@ class MainDialog(QDialog):
         newname = self.ui.textEdit_pdfname.text()
         return newname
 
-    # 使用os模块的walk函数，搜索出指定目录下的全部PDF文件
-    # 获取同一目录下的所有PDF文件的绝对路径
+    # 获取目录下所有pdf
     def getFileName(self, filedir):
         file_list = [os.path.join(root, filespath) \
                      for root, dirs, files in os.walk(filedir) \
                      for filespath in files \
                      if str(filespath).endswith('pdf')
                      ]
-        # ==========新增排序：按文件名数字自然升序==========
-        file_list.sort(key=self.natural_sort_key)
+        # 执行自然排序
+        file_list.sort(key=self.natural_key)
         return file_list if file_list else []
 
     # 合并同一目录下的所有PDF文件
@@ -60,14 +59,11 @@ class MainDialog(QDialog):
         if pdf_fileName:
             for pdf_file in pdf_fileName:
                 input = PdfFileReader(open(pdf_file, "rb"), strict=False)
-                # 获得源PDF文件中页面总数
                 pageCount = input.getNumPages()
                 outputPages += pageCount
-                # 分别将page添加到输出output中
                 for iPage in range(pageCount):
                     output.addPage(input.getPage(iPage))
             self.ui.printf(f"合并后的总页数：{outputPages}")
-            # 写入到目标PDF文件
             outpath = os.path.join(filepath, outfile).replace('\\', '/')
             outputStream = open(outpath, "wb")
             output.write(outputStream)
@@ -122,15 +118,11 @@ class MainDialog(QDialog):
         imgPath = os.path.join(currentpath, 'image\\')
         if not os.path.exists(imgPath):
             os.makedirs(imgPath)
-        # 打开PDF文件
         pdf = fitz.open(pdfpath)
-        # 逐页读取PDF
         for pg in range(0, pdf.page_count):
             page = pdf[pg]
-            # 设置缩放和旋转系数
             trans = fitz.Matrix(zoom_x, zoom_y).prerotate(rotation_angle)
             pm = page.get_pixmap(matrix=trans, alpha=False)
-            # 开始写图像
             pm.save(imgPath+str(pg)+".png")
         pdf.close()
         self.ui.printf(f"pdf转换图片完成！")
