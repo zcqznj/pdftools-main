@@ -41,34 +41,13 @@ jobs:
 
       - name: Windows Nuitka打包
         if: matrix.os == 'windows-latest'
-        run: |
-          python -m nuitka pdftools.py ^
-          --standalone ^
-          --enable-plugin=pyside6,upx ^
-          --disable-console ^
-          --windows-icon-from-ico=app.ico ^
-          --output-dir=dist ^
-          --noinclude=unittest ^
-          --noinclude=tkinter ^
-          --noinclude=distutils ^
-          --lto=yes ^
-          --python-flag=-O
+        run: python -m nuitka pdftools.py --standalone --enable-plugin=pyside6,upx --disable-console --windows-icon-from-ico=app.ico --output-dir=dist --noinclude-module=unittest --noinclude-module=tkinter --noinclude-module=distutils --lto=yes --python-flag=-O
 
       - name: Mac Nuitka打包
         if: matrix.os == 'macos-latest'
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          python3 -m nuitka pdftools.py \
-          --standalone \
-          --enable-plugin=pyside6,upx \
-          --disable-console \
-          --macos-app-icon=app.icns \
-          --macos-create-app-bundle \
-          --output-dir=dist \
-          --noinclude=unittest \
-          --noinclude=tkinter \
-          --lto=yes \
-          --python-flag=-O
+          python3 -m nuitka pdftools.py --standalone --enable-plugin=pyside6,upx --disable-console --macos-app-icon=app.icns --macos-create-app-bundle --output-dir=dist --noinclude-module=unittest --noinclude-module=tkinter --noinclude-module=distutils --lto=yes --python-flag=-O
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
