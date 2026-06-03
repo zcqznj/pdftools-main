@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 from ui_mainwinmergepdf import Ui_MainWindow
 from pdf2docx import Converter
 import fitz
+import re  # 新增导入正则
 
 
 if not sys.warnoptions:
@@ -19,6 +20,12 @@ class MainDialog(QDialog):
         super(MainDialog, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+    # 自然排序key函数【新增】实现1,2,9,10,11升序
+    def natural_sort_key(self, s):
+        def to_int(text):
+            return int(text) if text.isdigit() else text
+        return [to_int(x) for x in re.split(r'(\d+)', os.path.basename(s))]
 
     # 利用PyPDF2模块合并同一文件夹下的所有PDF文件
     # 只需修改存放PDF文件的文件夹变量：file_dir 和 输出文件名变量: outfile
@@ -38,6 +45,8 @@ class MainDialog(QDialog):
                      for filespath in files \
                      if str(filespath).endswith('pdf')
                      ]
+        # ==========新增排序：按文件名数字自然升序==========
+        file_list.sort(key=self.natural_sort_key)
         return file_list if file_list else []
 
     # 合并同一目录下的所有PDF文件
@@ -67,7 +76,7 @@ class MainDialog(QDialog):
             self.ui.printf(f"合并后PDF路径：{outpath}")
         else:
             self.ui.printf("没有可以合并的PDF文件！")
-    
+
     # 合并任务
     def start_task(self):
         outfile = self.pdfname()
