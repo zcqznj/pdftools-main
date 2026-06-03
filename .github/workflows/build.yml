@@ -13,7 +13,6 @@ jobs:
       matrix:
         os: [ windows-latest, macos-latest ]
         python-version: [ "3.10" ]
-    # 重点：steps缩进在build内部
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,7 +39,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install upx
 
-      - name: Windows打包
+      - name: Windows Nuitka打包
         if: matrix.os == 'windows-latest'
         run: |
           python -m nuitka pdftools.py ^
@@ -55,7 +54,7 @@ jobs:
           --lto=yes ^
           --python-flag=-O
 
-      - name: Mac打包
+      - name: Mac Nuitka打包
         if: matrix.os == 'macos-latest'
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
