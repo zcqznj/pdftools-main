@@ -47,23 +47,25 @@ PDF转图片功能：
 pip install -r requirements.txt
 ```
 
-### Windows（生成 `dist\PDF工具.exe`）
+### Windows（生成 `dist\PDFTools.exe`）
 方式一：双击运行 `build_exe.bat`
 
 方式二：在项目根目录执行：
 ```powershell
-python -m PyInstaller --noconfirm --clean "PDF工具.spec"
+python -m PyInstaller --noconfirm --clean pdftools.spec
 ```
-产物路径：`dist\PDF工具.exe`（已做体积优化，裁掉未使用的 Qt / OpenCV 视频库等，不影响功能）
+产物路径：`dist\PDFTools.exe`（已做体积优化，裁掉未使用的 Qt / OpenCV 视频库等，不影响功能）
 
-### macOS（生成 `dist/PDF工具.app`）
+### macOS（生成 `dist/PDFTools.app`）
 在 **Mac 本机**（或 CI 的 macOS 环境）进入项目根目录执行：
 ```bash
 export MACOSX_DEPLOYMENT_TARGET=10.15
-python3 -m PyInstaller --noconfirm --clean --windowed --name "PDF工具" --exclude-module tkinter pdftools.py
+python3 -m PyInstaller --noconfirm --clean --windowed --name PDFTools --exclude-module tkinter pdftools.py
 ```
-产物路径：`dist/PDF工具.app`
+产物路径：`dist/PDFTools.app`
 
 说明：
 - Windows 的 `.exe` 不能在 Mac 上运行，需分别在对应系统上打包
+- 打包配置文件使用英文名 `pdftools.spec`，避免 GitHub Actions 等环境因中文文件名找不到
 - Mac 首次打开未签名应用时，若被拦截，可在「隐私与安全性」中允许，或右键 → 打开
+- 若 GitHub Actions 上传失败提示 `Artifact storage quota has been hit`：到仓库 **Actions** 页删除旧的 Artifacts，等待 6–12 小时配额刷新后再跑

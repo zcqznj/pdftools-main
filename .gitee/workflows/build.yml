@@ -45,7 +45,7 @@ jobs:
           # Windows环境
           if ($env:GITEE_WORKSPACE) { Set-Location $env:GITEE_WORKSPACE }
           if ($env:GITHUB_WORKSPACE) { Set-Location $env:GITHUB_WORKSPACE }
-          pyinstaller --noconfirm --clean "PDF工具.spec"
+          pyinstaller --noconfirm --clean pdftools.spec
         shell: pwsh
 
       - name: Build Mac app
@@ -54,10 +54,11 @@ jobs:
           if [ -n "$GITEE_WORKSPACE" ]; then cd "$GITEE_WORKSPACE"; fi
           if [ -n "$GITHUB_WORKSPACE" ]; then cd "$GITHUB_WORKSPACE"; fi
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          python3 -m PyInstaller --noconfirm --clean --windowed --name MyMacApp --exclude-module tkinter pdftools.py
+          python3 -m PyInstaller --noconfirm --clean --windowed --name PDFTools --exclude-module tkinter pdftools.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-output
           path: dist/
+          retention-days: 3
