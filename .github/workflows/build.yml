@@ -1,46 +1,79 @@
-name: Build Mac & Windows
+# ============================================================
+# GitHub Actions 自动打包工作流
+# 作用：在 GitHub 云端虚拟机上分别打出 Windows exe 和 Mac app
+# 你自己电脑不用装对应系统，也能拿到两边的安装包
+#
+# 怎么用：
+#   1. 把代码推到 GitHub 仓库的 main 分支 → 自动开始打包
+#   2. 或到仓库页：Actions → 选本工作流 → Run workflow → 手动打包
+#   3. 打包完成后：Actions → 点进某次运行 → Artifacts 里下载产物
+#      - windows-latest-output  → 里面有 PDF工具.exe
+#      - macos-latest-output   → 里面有 MyMacApp.app
+# ============================================================
 
+name: Build Mac & Windows   # 在 Actions 列表里显示的名称
+
+# ---------- 什么时候触发 ----------
 on:
+  # 代码推送到 main 分支时自动跑
   push:
     branches: [ main ]
-  workflow_dispatch:  # 支持手动触发
+  # 允许在网页上手动点「Run workflow」触发（不必等 push）
+  workflow_dispatch:
 
 jobs:
   build:
+    # 每台虚拟机用哪种系统：由下面 matrix.os 决定
+    # ${{ }} 是 GitHub Actions 的变量语法
     runs-on: ${{ matrix.os }}
+
     strategy:
+      # 一边失败不要取消另一边（Win 挂了照样打 Mac）
       fail-fast: false
+      # 矩阵：一次配置，并行跑多台机器
+      # 这里会同时开 2 台：Windows + macOS，都用 Python 3.10
       matrix:
         os: [ windows-latest, macos-latest ]
         python-version: [ "3.10" ]
 
     steps:
+      # 1）把当前仓库代码下载到虚拟机工作目录
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2）安装指定版本的 Python
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
+      # 3）安装项目依赖（含 PyInstaller、PySide6、pdf2docx 等）
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 4a）仅 Windows 机器执行：用优化过的 spec 打单文件 exe
+      #     if: 条件不满足时这一步会跳过（Mac 机器上不会跑）
       - name: Build Windows exe
         if: matrix.os == 'windows-latest'
         run: |
           pyinstaller --noconfirm --clean "PDF工具.spec"
+          # 产物在 dist/PDF工具.exe
 
+      # 4b）仅 macOS 机器执行：打成窗口程序（.app）
       - name: Build Mac app
         if: matrix.os == 'macos-latest'
         run: |
+          # 最低支持 macOS 10.15
           export MACOSX_DEPLOYMENT_TARGET=10.15
           python3 -m PyInstaller --noconfirm --clean --windowed --name MyMacApp --exclude-module tkinter pdftools.py
+          # 产物在 dist/MyMacApp.app
 
+      # 5）把 dist/ 上传为可下载的 Artifact（网页上可下，默认保留约 90 天）
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
+          # 两边产物分开命名，避免互相覆盖
           name: ${{ matrix.os }}-output
           path: dist/
