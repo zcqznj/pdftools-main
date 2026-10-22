@@ -1,20 +1,26 @@
 # ============================================================
 # GitHub Actions 自动打包工作流
-# 作用：在 GitHub 云端虚拟机上分别打出 Windows exe 和 Mac app
+#
+# 【当前状态】只打包 Mac（Windows 已临时注释，省配额 / 先测 Mac）
+#
+# 下次若要重新打包 Windows，按下面 3 处「【恢复 Windows 打包】」操作即可：
+#   1. matrix.os 里取消注释 windows-latest
+#   2. 取消注释「Build Windows exe」整段步骤
+#   3.（可选）把本文件顶部说明改回「Win + Mac」
 #
 # 怎么用：
 #   1. 推送到 main → 自动打包
 #   2. 或 Actions → 本工作流 → Run workflow → 手动打包
 #   3. 完成后在 Artifacts 下载：
-#      - windows-latest-output → PDFTools.exe
-#      - macos-latest-output  → PDFTools.app
+#      - macos-latest-output    → PDFTools.app
+#      - windows-latest-output  → PDFTools.exe  （恢复 Windows 后才有）
 #
 # 若 Upload artifact 报 Artifact storage quota has been hit：
 #   到仓库 Actions 页删除旧的 Artifacts，或 Settings → Billing 查看用量
 #   用量大约每 6–12 小时重算一次
 # ============================================================
 
-name: Build Mac & Windows
+name: Build Mac   # 恢复 Windows 后可改回：Build Mac & Windows
 
 on:
   push:
@@ -28,7 +34,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ windows-latest, macos-latest ]
+        # ----------【恢复 Windows 打包】处 1/2 ----------
+        # 需要同时打 Windows 时，改成下面这一行（取消注释 windows-latest）：
+        # os: [ windows-latest, macos-latest ]
+        os: [ macos-latest ]   # 当前：只跑 Mac
+        # -----------------------------------------------
         python-version: [ "3.10" ]
 
     steps:
@@ -45,12 +55,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ----------【恢复 Windows 打包】处 2/2：整段取消注释即可 ----------
       # 使用英文文件名 pdftools.spec，避免 CI 中文路径找不到
-      - name: Build Windows exe
-        if: matrix.os == 'windows-latest'
-        run: |
-          pyinstaller --noconfirm --clean pdftools.spec
-          # 产物：dist/PDFTools.exe
+      # - name: Build Windows exe
+      #   if: matrix.os == 'windows-latest'
+      #   run: |
+      #     pyinstaller --noconfirm --clean pdftools.spec
+      #     # 产物：dist/PDFTools.exe
+      # --------------------------------------------------------------------
 
       - name: Build Mac app
         if: matrix.os == 'macos-latest'
