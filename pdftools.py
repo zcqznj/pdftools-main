@@ -21,12 +21,25 @@ class MainDialog(QDialog):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-    # 自然排序：字母按abcd顺序、数字按数值大小 1<2<9<10
+    # 自然排序：
+    # - 英文字母：忽略大小写主序，同字母小写优先 → a < A < b < B
+    # - 内嵌数字：按数值大小 → 1 < 2 < 9 < 10（如 a2.pdf < a10.pdf）
     def natural_key(self, filepath):
         filename = os.path.basename(filepath)
-        def fn(s):
-            return int(s) if s.isdigit() else s.lower()
-        return [fn(part) for part in re.split(r'(\d+)', filename)]
+
+        def convert(part):
+            if part.isdigit():
+                return (0, int(part))
+            # 非数字段逐字符比较：(小写形式, 0小写/1大写)，保证 a<A<b<B
+            chars = []
+            for ch in part:
+                if ch.isalpha():
+                    chars.append((ch.lower(), 0 if ch.islower() else 1))
+                else:
+                    chars.append((ch, 0))
+            return (1, chars)
+
+        return [convert(part) for part in re.split(r'(\d+)', filename) if part]
 
     # 利用PyPDF2模块合并同一文件夹下的所有PDF文件
     def getpdfpath(self):
