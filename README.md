@@ -4,11 +4,15 @@
 ## 2、写这个工具的缘由：
 给我对象用，平时我也用不着。大家有需要的自取，安装包以打包好。
 ## 3、运行环境：
-python3.10 + win10
+python3.10 + Windows 10/11 或 macOS 10.15+
 ## 4、使用前准备：
-执行命令：pip install -r requirements.txt
+执行命令：
+```bash
+pip install -r requirements.txt
+```
 ## 5、使用介绍：
-直接执行PDF工具.vbs，打开操作页面。
+- Windows：双击执行 `PDF工具.vbs`，或命令行运行 `python pdftools.py`
+- macOS：命令行运行 `python3 pdftools.py`
 
 总体效果图：
 ![](picture/总体效果.jpg)
@@ -36,3 +40,30 @@ PDF转图片功能：
 转换后结果：
 
 ![](picture/pdf转图片_2.png)
+
+## 6、打包成可执行文件：
+先安装依赖（Windows / macOS 相同）：
+```bash
+pip install -r requirements.txt
+```
+
+### Windows（生成 `dist\PDF工具.exe`）
+方式一：双击运行 `build_exe.bat`
+
+方式二：在项目根目录执行：
+```powershell
+python -m PyInstaller --noconfirm --clean "PDF工具.spec"
+```
+产物路径：`dist\PDF工具.exe`（已做体积优化，裁掉未使用的 Qt / OpenCV 视频库等，不影响功能）
+
+### macOS（生成 `dist/PDF工具.app`）
+在 **Mac 本机**（或 CI 的 macOS 环境）进入项目根目录执行：
+```bash
+export MACOSX_DEPLOYMENT_TARGET=10.15
+python3 -m PyInstaller --noconfirm --clean --windowed --name "PDF工具" --exclude-module tkinter pdftools.py
+```
+产物路径：`dist/PDF工具.app`
+
+说明：
+- Windows 的 `.exe` 不能在 Mac 上运行，需分别在对应系统上打包
+- Mac 首次打开未签名应用时，若被拦截，可在「隐私与安全性」中允许，或右键 → 打开

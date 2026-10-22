@@ -31,15 +31,13 @@ jobs:
       - name: Build Windows exe
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --onefile --windowed --name MyWinApp pdftools.py
-        # 有图标就加：--icon=app.ico
+          pyinstaller --noconfirm --clean "PDF工具.spec"
 
       - name: Build Mac app
         if: matrix.os == 'macos-latest'
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
-          python3 -m PyInstaller --windowed --name MyMacApp pdftools.py
-        # 有图标就加：--icon=app.icns
+          python3 -m PyInstaller --noconfirm --clean --windowed --name MyMacApp --exclude-module tkinter pdftools.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
